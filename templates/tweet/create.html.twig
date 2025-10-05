@@ -1,0 +1,16 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}New Tweet{% endblock %}
+
+{% block body %}
+    <div class="container" style="max-width: 600px; margin: 50px auto;">
+        <h1>Create Tweet</h1>
+
+        {{ form_start(form) }}
+        {{ form_row(form.content) }}
+
+        <button type="submit" class="btn btn-primary">Tweet</button>
+        <a href="{{ path('tweet_list') }}" class="btn btn-secondary">Cancel</a>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

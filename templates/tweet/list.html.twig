@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Timeline{% endblock %}
+
+{% block body %}
+    <div class="container" style="max-width: 600px; margin: 50px auto;">
+        <h1>Timeline</h1>
+
+        {% if app.user %}
+            <a href="{{ path('tweet_create') }}" class="btn btn-primary mb-3">New Tweet</a>
+        {% endif %}
+
+        {% for tweet in tweets %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">
+                        @{{ tweet.user.username }} ·
+                        {{ tweet.createdAt|date('d M Y H:i') }}
+                    </h6>
+                    <p class="card-text">{{ tweet.content }}</p>
+
+                    {% if app.user and tweet.user.id == app.user.id %}
+                        <form method="post" action="{{ path('tweet_delete', {id: tweet.id}) }}"
+                              onsubmit="return confirm('Tweet silinsin?');" style="display: inline;">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ tweet.id) }}">
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <p class="mb-0">Hələ heç bir tweet yoxdur.</p>
+                {% if app.user %}
+                    <a href="{{ path('tweet_create') }}" class="btn btn-primary mt-2">İlk Tweet-i yarat</a>
+                {% else %}
+                    <a href="{{ path('app_login') }}" class="btn btn-primary mt-2">Login olun</a>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
