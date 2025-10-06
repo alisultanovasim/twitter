@@ -1,0 +1,19 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}404{% endblock %}
+
+{% block body %}
+    <div class="container text-center" style="margin-top: 100px;">
+        <h1 style="font-size: 100px; color: #e74c3c;">404</h1>
+        <h3>{{ message|default('Səhifə tapılmadı') }}</h3>
+        <p class="text-muted mt-3">
+            Axtardığınız səhifə mövcud deyil və ya silinib.
+        </p>
+        <div class="mt-4">
+            <a href="{{ path('tweet_list') }}" class="btn btn-primary">Ana səhifə</a>
+            {% if app.user %}
+                <a href="{{ path('user_profile', {username: app.user.username}) }}" class="btn btn-secondary">Profilim</a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

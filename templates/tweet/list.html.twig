@@ -14,11 +14,23 @@
             <div class="card mb-3">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2 text-muted">
-                        @{{ tweet.user.username }} ·
+                        <a href="{{ path('user_profile', {username: tweet.user.username}) }}">
+                            @{{ tweet.user.username }}
+                        </a> ·
                         {{ tweet.createdAt|date('d M Y H:i') }}
                     </h6>
                     <p class="card-text">{{ tweet.content }}</p>
 
+                    {% if app.user %}
+                        <button onclick="likeToggle({{ tweet.id }})" class="btn btn-sm">
+                            <span id="like-{{ tweet.id }}">
+                                {{ tweet.isLikedBy(app.user) ? '❤️' : '🤍' }}
+                            </span>
+                            <span id="count-{{ tweet.id }}">{{ tweet.likesCount }}</span>
+                        </button>
+                    {% else %}
+                        <span class="text-muted">🤍 {{ tweet.likesCount }}</span>
+                    {% endif %}
                     {% if app.user and tweet.user.id == app.user.id %}
                         <form method="post" action="{{ path('tweet_delete', {id: tweet.id}) }}"
                               onsubmit="return confirm('Tweet silinsin?');" style="display: inline;">
@@ -39,4 +51,27 @@
             </div>
         {% endfor %}
     </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        function likeToggle(tweetId) {
+            fetch(`/tweet/${tweetId}/like`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '{{ csrf_token("tweet_like") }}'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById(`like-${tweetId}`).innerText = data.liked ? '❤️' : '🤍';
+                    document.getElementById(`count-${tweetId}`).innerText = data.count;
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('Xəta baş verdi');
+                });
+        }
+    </script>
 {% endblock %}

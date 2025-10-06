@@ -1,0 +1,37 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}@{{ user.username }}{% endblock %}
+
+{% block body %}
+    <div class="container" style="max-width: 600px; margin: 50px auto;">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2>@{{ user.username }}</h2>
+                <p class="text-muted">{{ user.email }}</p>
+                <p>Qeydiyyat: {{ user.createdAt|date('d M Y') }}</p>
+                <p><strong>{{ tweet_count }}</strong> Tweet</p>
+            </div>
+        </div>
+
+        <h4>Tweets</h4>
+
+        {% for tweet in tweets %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <p class="card-text">{{ tweet.content }}</p>
+                    <small class="text-muted">{{ tweet.createdAt|date('d M Y H:i') }}</small>
+
+                    {% if app.user and tweet.user.id == app.user.id %}
+                        <form method="post" action="{{ path('tweet_delete', {id: tweet.id}) }}"
+                              onsubmit="return confirm('Tweet silinsin?');" style="display: inline;">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ tweet.id) }}">
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <p class="text-muted">Hələ tweet yoxdur.</p>
+        {% endfor %}
+    </div>
+{% endblock %}

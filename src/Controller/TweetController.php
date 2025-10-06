@@ -71,4 +71,31 @@ class TweetController extends AbstractController
 
         return $this->redirectToRoute('tweet_list');
     }
+
+    #[Route('/tweet/{id}/like', name: 'tweet_like', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function like(Tweet $tweet, EntityManagerInterface $em,Request $request): Response
+    {
+        $token = $request->headers->get('X-CSRF-Token');
+        if (!$this->isCsrfTokenValid('tweet_like', $token)) {
+            return $this->json(['error' => 'Invalid CSRF token'], 403);
+        }
+
+        $user = $this->getUser();
+
+        if ($tweet->isLikedBy($user)) {
+            $tweet->removeLike($user);
+            $message = 'Unlike';
+        } else {
+            $tweet->addLike($user);
+            $message = 'Liked';
+        }
+
+        $em->flush();
+
+        return $this->json([
+            'liked' => $tweet->isLikedBy($user),
+            'count' => $tweet->getLikesCount()
+        ]);
+    }
 }
