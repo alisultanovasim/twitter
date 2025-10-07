@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Form\TweetType;
 use App\Repository\TweetRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,13 +32,21 @@ class TweetController extends AbstractController
 
     #[Route('/tweet/new', name: 'tweet_create', methods: ['GET', 'POST'])]
     #[IsGranted('ROLE_USER')]  // Yalnız login user
-    public function create(Request $request, EntityManagerInterface $em): Response
+    public function create(Request $request, EntityManagerInterface $em,LoggerInterface $logger): Response
     {
         $tweet = new Tweet();
         $form = $this->createForm(TweetType::class, $tweet);
         $form->handleRequest($request);
 
+        $logger->info('Form submitted', [
+            'data' => $form->getData()
+        ]);
+
         if ($form->isSubmitted() && $form->isValid()) {
+            $logger->error('Form validation failed', [
+                'errors' => (string)$form->getErrors(true, false)
+            ]);
+
             $tweet->setUser($this->getUser());
 
             $em->persist($tweet);
