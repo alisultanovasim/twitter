@@ -16,6 +16,26 @@
         <div class="alert alert-success">{{ message }}</div>
     {% endfor %}
 
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="{{ path('tweet_list') }}">Twitter Clone</a>
+
+            <form class="d-flex mx-auto" method="get" action="{{ path('app_search') }}" style="width: 400px;">
+                <input class="form-control" type="search" name="q" placeholder="Search" aria-label="Search">
+            </form>
+
+            <div class="navbar-nav ms-auto">
+                {% if app.user %}
+                    <a class="nav-link" href="{{ path('user_profile', {username: app.user.username}) }}">@{{ app.user.username }}</a>
+                    <a class="nav-link" href="{{ path('app_logout') }}">Logout</a>
+                {% else %}
+                    <a class="nav-link" href="{{ path('app_login') }}">Login</a>
+                    <a class="nav-link" href="{{ path('app_register') }}">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
     {% for message in app.flashes('error') %}
         <div class="alert alert-danger">{{ message }}</div>
     {% endfor %}

@@ -1,0 +1,57 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tweet{% endblock %}
+
+{% block body %}
+    <div class="container" style="max-width: 600px; margin: 50px auto;">
+        <a href="{{ path('tweet_list') }}" class="btn btn-sm btn-secondary mb-3">← Timeline</a>
+
+        {# Orijinal Tweet #}
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <h6>
+                        <a href="{{ path('user_profile', {username: tweet.user.username}) }}">
+                            @{{ tweet.user.username }}
+                        </a>
+                    </h6>
+                    <small class="text-muted">{{ tweet.createdAt|date('d M Y H:i') }}</small>
+                </div>
+                <p class="card-text mt-3" style="font-size: 1.2rem;">{{ tweet.content }}</p>
+
+                <div class="mt-3 text-muted">
+                    🤍 {{ tweet.likesCount }} · 💬 {{ tweet.repliesCount }} cavab
+                </div>
+            </div>
+        </div>
+
+        {# Cavab forması #}
+        {% if app.user %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <a href="{{ path('tweet_reply', {id: tweet.id}) }}" class="btn btn-primary">
+                        Cavab yaz
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        {# Cavablar #}
+        <h5>Cavablar ({{ replies|length }})</h5>
+        {% for reply in replies %}
+            <div class="card mb-2">
+                <div class="card-body">
+                    <h6>
+                        <a href="{{ path('user_profile', {username: reply.user.username}) }}">
+                            @{{ reply.user.username }}
+                        </a>
+                        <small class="text-muted">· {{ reply.createdAt|date('d M Y H:i') }}</small>
+                    </h6>
+                    <p class="card-text">{{ reply.content }}</p>
+                </div>
+            </div>
+        {% else %}
+            <p class="text-muted">Hələ cavab yoxdur.</p>
+        {% endfor %}
+    </div>
+{% endblock %}

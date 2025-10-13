@@ -53,6 +53,77 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'boolean')]
     private bool $isVerified = false;
 
+    /**
+     * @var Collection<int, User>
+     */
+    #[ORM\ManyToMany(targetEntity: User::class)]
+    #[ORM\JoinTable(
+        name: 'user_followers',
+        joinColumns: [new ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id')],
+        inverseJoinColumns: [new ORM\JoinColumn(name: 'follower_id', referencedColumnName: 'id')]
+    )]
+    private Collection $followers;
+
+    /**
+     * @var Collection<int, User>
+     */
+    #[ORM\ManyToMany(targetEntity: User::class)]
+    #[ORM\JoinTable(
+        name: 'user_following',
+        joinColumns: [new ORM\JoinColumn(name: 'follower_id', referencedColumnName: 'id')],
+        inverseJoinColumns: [new ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id')]
+    )]
+    private Collection $following;
+
+    public function __construct()
+    {
+        $this->tweets = new ArrayCollection();
+        $this->followers = new ArrayCollection();
+        $this->following = new ArrayCollection();
+    }
+    public function getFollowers(): Collection
+    {
+        return $this->followers;
+    }
+
+    public function getFollowersCount(): int
+    {
+        return $this->followers->count();
+    }
+
+    public function getFollowing(): Collection
+    {
+        return $this->following;
+    }
+
+    public function getFollowingCount(): int
+    {
+        return $this->following->count();
+    }
+
+    public function follow(User $user): static
+    {
+        if (!$this->following->contains($user) && $user !== $this) {
+            $this->following->add($user);
+            $user->followers->add($this);
+        }
+        return $this;
+    }
+
+    public function unfollow(User $user): static
+    {
+        if ($this->following->contains($user)) {
+            $this->following->removeElement($user);
+            $user->followers->removeElement($this);
+        }
+        return $this;
+    }
+
+    public function isFollowing(User $user): bool
+    {
+        return $this->following->contains($user);
+    }
+
     public function isVerified(): bool
     {
         return $this->isVerified;
@@ -62,11 +133,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->isVerified = $isVerified;
         return $this;
-    }
-
-    public function __construct()
-    {
-        $this->tweets = new ArrayCollection();
     }
 
     public function getId(): ?int

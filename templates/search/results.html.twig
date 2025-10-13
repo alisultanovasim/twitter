@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Search: {{ query }}{% endblock %}
+
+{% block body %}
+    <div class="container" style="max-width: 600px; margin: 50px auto;">
+        <h1>Search Results</h1>
+
+        <form method="get" action="{{ path('app_search') }}" class="mb-4">
+            <div class="input-group">
+                <input
+                        type="text"
+                        name="q"
+                        value="{{ query }}"
+                        class="form-control"
+                        placeholder="Search tweets or users..."
+                        autofocus
+                >
+                <button class="btn btn-primary" type="submit">Search</button>
+            </div>
+        </form>
+
+        {% if query %}
+            <h4 class="mt-4">Users ({{ users|length }})</h4>
+            {% if users %}
+                <div class="list-group mb-4">
+                    {% for user in users %}
+                        <a href="{{ path('user_profile', {username: user.username}) }}" class="list-group-item list-group-item-action">
+                            <strong>@{{ user.username }}</strong>
+                            <small class="text-muted">{{ user.email }}</small>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">No users found.</p>
+            {% endif %}
+
+            <h4 class="mt-4">Tweets ({{ tweets|length }})</h4>
+            {% if tweets %}
+                {% for tweet in tweets %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <a href="{{ path('user_profile', {username: tweet.user.username}) }}">
+                                    @{{ tweet.user.username }}
+                                </a> ·
+                                {{ tweet.createdAt|date('d M Y H:i') }}
+                            </h6>
+                            <p class="card-text">{{ tweet.content }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No tweets found.</p>
+            {% endif %}
+        {% else %}
+            <p class="text-muted">Enter at least 2 characters to search.</p>
+        {% endif %}
+    </div>
+{% endblock %}
