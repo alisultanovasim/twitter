@@ -28,6 +28,9 @@
                             </span>
                             <span id="count-{{ tweet.id }}">{{ tweet.likesCount }}</span>
                         </button>
+                        <a href="{{ path('tweet_show', {id: tweet.id}) }}" class="text-decoration-none">
+                            💬 {{ tweet.repliesCount }}
+                        </a>
                     {% else %}
                         <span class="text-muted">🤍 {{ tweet.likesCount }}</span>
                     {% endif %}

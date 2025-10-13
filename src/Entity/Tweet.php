@@ -38,10 +38,67 @@ class Tweet
     #[ORM\JoinTable(name: 'tweet_likes')]
     private Collection $likedBy;
 
+    #[ORM\ManyToOne(targetEntity: Tweet::class, inversedBy: 'replies')]
+    #[ORM\JoinColumn(name: 'parent_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    private ?Tweet $parent = null;
+
+    /**
+     * @var Collection<int, Tweet>
+     */
+    #[ORM\OneToMany(targetEntity: Tweet::class, mappedBy: 'parent')]
+    private Collection $replies;
+
 
     public function __construct()
     {
         $this->likedBy = new ArrayCollection();
+        $this->replies = new ArrayCollection();
+
+    }
+
+    public function getParent(): ?Tweet
+    {
+        return $this->parent;
+    }
+
+    public function setParent(?Tweet $parent): static
+    {
+        $this->parent = $parent;
+        return $this;
+    }
+
+    public function getReplies(): Collection
+    {
+        return $this->replies;
+    }
+
+    public function addReply(Tweet $reply): static
+    {
+        if (!$this->replies->contains($reply)) {
+            $this->replies->add($reply);
+            $reply->setParent($this);
+        }
+        return $this;
+    }
+
+    public function removeReply(Tweet $reply): static
+    {
+        if ($this->replies->removeElement($reply)) {
+            if ($reply->getParent() === $this) {
+                $reply->setParent(null);
+            }
+        }
+        return $this;
+    }
+
+    public function getRepliesCount(): int
+    {
+        return $this->replies->count();
+    }
+
+    public function isReply(): bool
+    {
+        return $this->parent !== null;
     }
 
     public function getLikedBy(): Collection

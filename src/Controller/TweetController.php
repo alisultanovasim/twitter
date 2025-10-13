@@ -107,4 +107,45 @@ class TweetController extends AbstractController
             'count' => $tweet->getLikesCount()
         ]);
     }
+    #[Route('/tweet/{id}', name: 'tweet_show', methods: ['GET'])]
+    public function show(Tweet $tweet, TweetRepository $tweetRepository): Response
+    {
+        // Tweet və bütün cavabları
+        $replies = $tweetRepository->findBy(
+            ['parent' => $tweet],
+            ['createdAt' => 'ASC']
+        );
+
+        return $this->render('tweet/show.html.twig', [
+            'tweet' => $tweet,
+            'replies' => $replies,
+        ]);
+    }
+
+    #[Route('/tweet/{id}/reply', name: 'tweet_reply', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function reply(Tweet $parentTweet, Request $request, EntityManagerInterface $em): Response
+    {
+        $reply = new Tweet();
+        $reply->setParent($parentTweet);
+
+        $form = $this->createForm(TweetType::class, $reply);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $reply->setUser($this->getUser());
+
+            $em->persist($reply);
+            $em->flush();
+
+            $this->addFlash('success', 'Cavab əlavə olundu!');
+
+            return $this->redirectToRoute('tweet_show', ['id' => $parentTweet->getId()]);
+        }
+
+        return $this->render('tweet/reply.html.twig', [
+            'form' => $form,
+            'parent_tweet' => $parentTweet,
+        ]);
+    }
 }
