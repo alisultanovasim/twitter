@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use App\Service\NotificationService;
 
 class TweetController extends AbstractController
 {
@@ -83,7 +84,12 @@ class TweetController extends AbstractController
 
     #[Route('/tweet/{id}/like', name: 'tweet_like', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function like(Tweet $tweet, EntityManagerInterface $em,Request $request): Response
+    public function like(
+        Tweet $tweet,
+        EntityManagerInterface $em,
+        Request $request,
+        NotificationService $notificationService
+    ): Response
     {
         $token = $request->headers->get('X-CSRF-Token');
         if (!$this->isCsrfTokenValid('tweet_like', $token)) {
@@ -94,10 +100,10 @@ class TweetController extends AbstractController
 
         if ($tweet->isLikedBy($user)) {
             $tweet->removeLike($user);
-            $message = 'Unlike';
+            $notificationService->removeLikeNotification($user, $tweet);
         } else {
             $tweet->addLike($user);
-            $message = 'Liked';
+            $notificationService->createLikeNotification($user, $tweet);
         }
 
         $em->flush();
@@ -148,4 +154,5 @@ class TweetController extends AbstractController
             'parent_tweet' => $parentTweet,
         ]);
     }
+
 }

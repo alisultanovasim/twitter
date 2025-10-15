@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\TweetRepository;
 use App\Repository\UserRepository;
+use App\Service\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -41,7 +42,8 @@ class UserController extends AbstractController
         string $username,
         UserRepository $userRepository,
         EntityManagerInterface $em,
-        Request $request
+        Request $request,
+        NotificationService $notificationService
     ): Response
     {
         // CSRF token yoxla
@@ -68,6 +70,7 @@ class UserController extends AbstractController
             $following = false;
         } else {
             $currentUser->follow($userToFollow);
+            $notificationService->createFollowNotification($currentUser, $userToFollow);
             $following = true;
         }
 
