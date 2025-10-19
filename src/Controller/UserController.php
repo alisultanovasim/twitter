@@ -23,11 +23,12 @@ class UserController extends AbstractController
         if (!$user) {
             throw $this->createNotFoundException('User tapılmadı');
         }
-        // User-in tweet-lərini gətir
-        $tweets = $tweetRepository->findBy(
-            ['user' => $user],
-            ['createdAt' => 'DESC']
-        );
+        $tweets = $tweetRepository->createQueryBuilder('t')
+            ->where('t.user = :user')
+            ->setParameter('user', $user)
+            ->orderBy('t.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
 
         return $this->render('user/profile.html.twig', [
             'user' => $user,

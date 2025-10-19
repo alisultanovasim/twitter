@@ -46,7 +46,43 @@
                                 </a> ·
                                 {{ tweet.createdAt|date('d M Y H:i') }}
                             </h6>
-                            <p class="card-text">{{ tweet.content }}</p>
+
+                            {# YENI: Tweet content-i clickable #}
+                            <a href="{{ path('tweet_show', {id: tweet.id}) }}" class="text-decoration-none text-dark">
+                                <p class="card-text">{{ tweet.content }}</p>
+                            </a>
+
+                            {# YENI: Interaction buttons əlavə et #}
+                            {% if app.user %}
+                                <div class="mt-2">
+                                    {# Like #}
+                                    <button onclick="likeToggle({{ tweet.id }})" class="btn btn-sm">
+                                        <span id="like-{{ tweet.id }}">
+                                            {{ tweet.isLikedBy(app.user) ? '❤️' : '🤍' }}
+                                        </span>
+                                        <span id="count-{{ tweet.id }}">{{ tweet.likesCount }}</span>
+                                    </button>
+
+                                    {# Retweet #}
+                                    <button onclick="retweetToggle({{ tweet.id }})" class="btn btn-sm">
+                                        <span id="retweet-{{ tweet.id }}">
+                                            {{ tweet.isRetweetedBy(app.user) ? '🔁' : '🔄' }}
+                                        </span>
+                                        <span id="retweet-count-{{ tweet.id }}">{{ tweet.retweetsCount }}</span>
+                                    </button>
+
+                                    {# Reply #}
+                                    <a href="{{ path('tweet_show', {id: tweet.id}) }}" class="text-decoration-none">
+                                        💬 {{ tweet.repliesCount }}
+                                    </a>
+                                </div>
+                            {% else %}
+                                <small class="text-muted">
+                                    🤍 {{ tweet.likesCount }} ·
+                                    🔄 {{ tweet.retweetsCount }} ·
+                                    💬 {{ tweet.repliesCount }}
+                                </small>
+                            {% endif %}
                         </div>
                     </div>
                 {% endfor %}
@@ -57,4 +93,51 @@
             <p class="text-muted">Enter at least 2 characters to search.</p>
         {% endif %}
     </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        function likeToggle(tweetId) {
+            fetch(`/tweet/${tweetId}/like`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '{{ csrf_token("tweet_like") }}'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById(`like-${tweetId}`).innerText = data.liked ? '❤️' : '🤍';
+                    document.getElementById(`count-${tweetId}`).innerText = data.count;
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('Xəta baş verdi');
+                });
+        }
+
+        function retweetToggle(tweetId) {
+            fetch(`/tweet/${tweetId}/retweet`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '{{ csrf_token("tweet_retweet") }}'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+
+                    document.getElementById(`retweet-${tweetId}`).innerText = data.retweeted ? '🔁' : '🔄';
+                    document.getElementById(`retweet-count-${tweetId}`).innerText = data.count;
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('Xəta baş verdi');
+                });
+        }
+    </script>
 {% endblock %}

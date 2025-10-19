@@ -9,18 +9,55 @@
         {# Orijinal Tweet #}
         <div class="card mb-4">
             <div class="card-body">
+                {# YENI: Əgər bu retweet-dirsə, göstər #}
+                {% if tweet.isRetweet %}
+                    <small class="text-muted mb-2 d-block">
+                        🔁 @{{ tweet.user.username }} retweeted
+                    </small>
+                    {% set displayTweet = tweet.originalTweet %}
+                {% else %}
+                    {% set displayTweet = tweet %}
+                {% endif %}
+
                 <div class="d-flex justify-content-between">
                     <h6>
-                        <a href="{{ path('user_profile', {username: tweet.user.username}) }}">
-                            @{{ tweet.user.username }}
+                        <a href="{{ path('user_profile', {username: displayTweet.user.username}) }}">
+                            @{{ displayTweet.user.username }}
                         </a>
                     </h6>
-                    <small class="text-muted">{{ tweet.createdAt|date('d M Y H:i') }}</small>
+                    <small class="text-muted">{{ displayTweet.createdAt|date('d M Y H:i') }}</small>
                 </div>
-                <p class="card-text mt-3" style="font-size: 1.2rem;">{{ tweet.content }}</p>
+                <p class="card-text mt-3" style="font-size: 1.2rem;">{{ displayTweet.content }}</p>
 
-                <div class="mt-3 text-muted">
-                    🤍 {{ tweet.likesCount }} · 💬 {{ tweet.repliesCount }} cavab
+                {# YENI: Interactive buttons (Like, Retweet, Reply count) #}
+                <div class="mt-3">
+                    {% if app.user %}
+                        {# Like button #}
+                        <button onclick="likeToggle({{ displayTweet.id }})" class="btn btn-sm btn-outline-secondary">
+                            <span id="like-{{ displayTweet.id }}">
+                                {{ displayTweet.isLikedBy(app.user) ? '❤️' : '🤍' }}
+                            </span>
+                            <span id="count-{{ displayTweet.id }}">{{ displayTweet.likesCount }}</span>
+                        </button>
+
+                        {# Retweet button #}
+                        <button onclick="retweetToggle({{ displayTweet.id }})" class="btn btn-sm btn-outline-secondary">
+                            <span id="retweet-{{ displayTweet.id }}">
+                                {{ displayTweet.isRetweetedBy(app.user) ? '🔁' : '🔄' }}
+                            </span>
+                            <span id="retweet-count-{{ displayTweet.id }}">{{ displayTweet.retweetsCount }}</span>
+                        </button>
+
+                        {# Reply button (clickable) #}
+                        <a href="{{ path('tweet_reply', {id: displayTweet.id}) }}" class="btn btn-sm btn-outline-secondary">
+                            💬 {{ displayTweet.repliesCount }}
+                        </a>
+                    {% else %}
+                        {# Qonaq üçün yalnız count #}
+                        <span class="text-muted">🤍 {{ displayTweet.likesCount }}</span> ·
+                        <span class="text-muted">🔄 {{ displayTweet.retweetsCount }}</span> ·
+                        <span class="text-muted">💬 {{ displayTweet.repliesCount }}</span>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -29,7 +66,7 @@
         {% if app.user %}
             <div class="card mb-4">
                 <div class="card-body">
-                    <a href="{{ path('tweet_reply', {id: tweet.id}) }}" class="btn btn-primary">
+                    <a href="{{ path('tweet_reply', {id: displayTweet.id}) }}" class="btn btn-primary">
                         Cavab yaz
                     </a>
                 </div>
@@ -48,10 +85,74 @@
                         <small class="text-muted">· {{ reply.createdAt|date('d M Y H:i') }}</small>
                     </h6>
                     <p class="card-text">{{ reply.content }}</p>
+
+                    {# Reply-ə də like və retweet əlavə et #}
+                    {% if app.user %}
+                        <button onclick="likeToggle({{ reply.id }})" class="btn btn-sm">
+                            <span id="like-{{ reply.id }}">
+                                {{ reply.isLikedBy(app.user) ? '❤️' : '🤍' }}
+                            </span>
+                            <span id="count-{{ reply.id }}">{{ reply.likesCount }}</span>
+                        </button>
+
+                        <button onclick="retweetToggle({{ reply.id }})" class="btn btn-sm">
+                            <span id="retweet-{{ reply.id }}">
+                                {{ reply.isRetweetedBy(app.user) ? '🔁' : '🔄' }}
+                            </span>
+                            <span id="retweet-count-{{ reply.id }}">{{ reply.retweetsCount }}</span>
+                        </button>
+                    {% endif %}
                 </div>
             </div>
         {% else %}
             <p class="text-muted">Hələ cavab yoxdur.</p>
         {% endfor %}
     </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        function likeToggle(tweetId) {
+            fetch(`/tweet/${tweetId}/like`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '{{ csrf_token("tweet_like") }}'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById(`like-${tweetId}`).innerText = data.liked ? '❤️' : '🤍';
+                    document.getElementById(`count-${tweetId}`).innerText = data.count;
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('Xəta baş verdi');
+                });
+        }
+
+        function retweetToggle(tweetId) {
+            fetch(`/tweet/${tweetId}/retweet`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '{{ csrf_token("tweet_retweet") }}'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+
+                    document.getElementById(`retweet-${tweetId}`).innerText = data.retweeted ? '🔁' : '🔄';
+                    document.getElementById(`retweet-count-${tweetId}`).innerText = data.count;
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('Xəta baş verdi');
+                });
+        }
+    </script>
 {% endblock %}

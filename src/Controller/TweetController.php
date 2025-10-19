@@ -3,11 +3,9 @@
 namespace App\Controller;
 
 use App\Entity\Tweet;
-use App\Entity\User;
 use App\Form\TweetType;
 use App\Repository\TweetRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,34 +18,27 @@ class TweetController extends AbstractController
     #[Route('/tweets', name: 'tweet_list', methods: ['GET'])]
     public function list(TweetRepository $tweetRepository): Response
     {
-        $tweets = $tweetRepository->findBy(
-            [],
-            ['createdAt' => 'DESC'],
-            50  // Son 50 tweet
-        );
+        $thisUser = $this->getUser();
+        if (!$thisUser) {
+            // Qonaq üçün public timeline
+            $tweets = $tweetRepository->findBy([], ['createdAt' => 'DESC'], 50);
+        } else {
+            // Login user üçün following timeline
+            $tweets = $tweetRepository->getFollowingTimeline($thisUser, 50);
+        }
 
-        return $this->render('tweet/list.html.twig', [
-            'tweets' => $tweets,
-        ]);
+        return $this->render('tweet/list.html.twig', ['tweets' => $tweets]);
     }
 
     #[Route('/tweet/new', name: 'tweet_create', methods: ['GET', 'POST'])]
     #[IsGranted('ROLE_USER')]  // Yalnız login user
-    public function create(Request $request, EntityManagerInterface $em,LoggerInterface $logger): Response
+    public function create(Request $request, EntityManagerInterface $em): Response
     {
         $tweet = new Tweet();
         $form = $this->createForm(TweetType::class, $tweet);
         $form->handleRequest($request);
 
-        $logger->info('Form submitted', [
-            'data' => $form->getData()
-        ]);
-
         if ($form->isSubmitted() && $form->isValid()) {
-            $logger->error('Form validation failed', [
-                'errors' => (string)$form->getErrors(true, false)
-            ]);
-
             $tweet->setUser($this->getUser());
 
             $em->persist($tweet);
@@ -155,4 +146,61 @@ class TweetController extends AbstractController
         ]);
     }
 
+    #[Route('/tweet/{id}/retweet', name: 'tweet_retweet', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function retweet(
+        Tweet $originalTweet,
+        EntityManagerInterface $em,
+        Request $request
+    ): Response
+    {
+        // CSRF yoxla
+        $token = $request->headers->get('X-CSRF-Token');
+        if (!$this->isCsrfTokenValid('tweet_retweet', $token)) {
+            return $this->json(['error' => 'Invalid CSRF token'], 403);
+        }
+
+        $user = $this->getUser();
+
+        // Öz tweet-ini retweet edə bilməz
+        if ($originalTweet->getUser() === $user) {
+            return $this->json(['error' => 'Öz tweet-inizi retweet edə bilməzsiniz'], 400);
+        }
+
+        // Retweet-i retweet edə bilməz (yalnız original)
+        if ($originalTweet->isRetweet()) {
+            return $this->json(['error' => 'Retweet-i retweet edə bilməzsiniz'], 400);
+        }
+
+        // Check: artıq retweet edibmi?
+        $existingRetweet = $em->getRepository(Tweet::class)->findOneBy([
+            'user' => $user,
+            'originalTweet' => $originalTweet
+        ]);
+
+        if ($existingRetweet) {
+            // Undo retweet
+            $em->remove($existingRetweet);
+            $em->flush();
+
+            return $this->json([
+                'retweeted' => false,
+                'count' => $originalTweet->getRetweetsCount()
+            ]);
+        }
+
+        // Yeni retweet yarat
+        $retweet = new Tweet();
+        $retweet->setUser($user);
+        $retweet->setOriginalTweet($originalTweet);
+        $retweet->setContent(''); // Retweet-də content boşdur
+
+        $em->persist($retweet);
+        $em->flush();
+
+        return $this->json([
+            'retweeted' => true,
+            'count' => $originalTweet->getRetweetsCount()
+        ]);
+    }
 }

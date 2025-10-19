@@ -37,9 +37,55 @@
         {% for tweet in tweets %}
             <div class="card mb-3">
                 <div class="card-body">
-                    <p class="card-text">{{ tweet.content }}</p>
-                    <small class="text-muted">{{ tweet.createdAt|date('d M Y H:i') }}</small>
+                    {# YENI: Əgər retweet-dirsə, göstər #}
+                    {% if tweet.isRetweet %}
+                        <small class="text-muted mb-2 d-block">
+                            🔁 @{{ tweet.user.username }} retweeted
+                        </small>
+                        {% set displayTweet = tweet.originalTweet %}
+                    {% else %}
+                        {% set displayTweet = tweet %}
+                    {% endif %}
 
+                    {# Original tweet author və tarix #}
+                    <h6 class="card-subtitle mb-2 text-muted">
+                        <a href="{{ path('user_profile', {username: displayTweet.user.username}) }}">
+                            @{{ displayTweet.user.username }}
+                        </a> ·
+                        {{ displayTweet.createdAt|date('d M Y H:i') }}
+                    </h6>
+
+                    <p class="card-text">{{ displayTweet.content }}</p>
+
+                    {# Interaction buttons #}
+                    {% if app.user %}
+                        {# Like button #}
+                        <button onclick="likeToggle({{ displayTweet.id }})" class="btn btn-sm">
+                            <span id="like-{{ displayTweet.id }}">
+                                {{ displayTweet.isLikedBy(app.user) ? '❤️' : '🤍' }}
+                            </span>
+                            <span id="count-{{ displayTweet.id }}">{{ displayTweet.likesCount }}</span>
+                        </button>
+
+                        {# Retweet button #}
+                        <button onclick="retweetToggle({{ displayTweet.id }})" class="btn btn-sm">
+                            <span id="retweet-{{ displayTweet.id }}">
+                                {{ displayTweet.isRetweetedBy(app.user) ? '🔁' : '🔄' }}
+                            </span>
+                            <span id="retweet-count-{{ displayTweet.id }}">{{ displayTweet.retweetsCount }}</span>
+                        </button>
+
+                        {# Reply link #}
+                        <a href="{{ path('tweet_show', {id: displayTweet.id}) }}" class="text-decoration-none">
+                            💬 {{ displayTweet.repliesCount }}
+                        </a>
+                    {% else %}
+                        <span class="text-muted">🤍 {{ displayTweet.likesCount }}</span>
+                        <span class="text-muted">🔄 {{ displayTweet.retweetsCount }}</span>
+                        <span class="text-muted">💬 {{ displayTweet.repliesCount }}</span>
+                    {% endif %}
+
+                    {# Delete button - yalnız ÖZ tweet-ini silə bilər #}
                     {% if app.user and tweet.user.id == app.user.id %}
                         <form method="post" action="{{ path('tweet_delete', {id: tweet.id}) }}"
                               onsubmit="return confirm('Tweet silinsin?');" style="display: inline;">
@@ -76,6 +122,49 @@
                     if (followersEl) followersEl.innerText = data.followers_count;
                 })
                 .catch(err => console.error(err));
+        }
+
+        function likeToggle(tweetId) {
+            fetch(`/tweet/${tweetId}/like`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '{{ csrf_token("tweet_like") }}'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById(`like-${tweetId}`).innerText = data.liked ? '❤️' : '🤍';
+                    document.getElementById(`count-${tweetId}`).innerText = data.count;
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('Xəta baş verdi');
+                });
+        }
+
+        function retweetToggle(tweetId) {
+            fetch(`/tweet/${tweetId}/retweet`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '{{ csrf_token("tweet_retweet") }}'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+
+                    document.getElementById(`retweet-${tweetId}`).innerText = data.retweeted ? '🔁' : '🔄';
+                    document.getElementById(`retweet-count-${tweetId}`).innerText = data.count;
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('Xəta baş verdi');
+                });
         }
     </script>
 {% endblock %}

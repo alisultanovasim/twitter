@@ -54,12 +54,26 @@ class Tweet
     #[ORM\OneToMany(targetEntity: Notification::class, mappedBy: 'tweet')]
     private Collection $notifications;
 
+    /**
+     * Original tweet reference (əgər bu retweet-dirsə)
+     */
+    #[ORM\ManyToOne(targetEntity: Tweet::class, inversedBy: 'retweets')]
+    #[ORM\JoinColumn(name: 'original_tweet_id', nullable: true, onDelete: 'CASCADE')]
+    private ?Tweet $originalTweet = null;
+
+    /**
+     * Bu tweet-in retweet-ləri
+     * @var Collection<int, Tweet>
+     */
+    #[ORM\OneToMany(targetEntity: Tweet::class, mappedBy: 'originalTweet')]
+    private Collection $retweets;
 
     public function __construct()
     {
         $this->likedBy = new ArrayCollection();
         $this->replies = new ArrayCollection();
         $this->notifications = new ArrayCollection();
+        $this->retweets = new ArrayCollection();
 
     }
 
@@ -194,5 +208,43 @@ class Tweet
         }
 
         return $this;
+    }
+    public function getOriginalTweet(): ?Tweet
+    {
+        return $this->originalTweet;
+    }
+
+    public function setOriginalTweet(?Tweet $originalTweet): static
+    {
+        $this->originalTweet = $originalTweet;
+        return $this;
+    }
+
+    public function getRetweets(): Collection
+    {
+        return $this->retweets;
+    }
+
+    public function getRetweetsCount(): int
+    {
+        return $this->retweets->count();
+    }
+
+    public function isRetweet(): bool
+    {
+        return $this->originalTweet !== null;
+    }
+
+    /**
+     * Check əgər user artıq retweet edibsə
+     */
+    public function isRetweetedBy(User $user): bool
+    {
+        foreach ($this->retweets as $retweet) {
+            if ($retweet->getUser() === $user) {
+                return true;
+            }
+        }
+        return false;
     }
 }
