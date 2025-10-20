@@ -1,0 +1,4 @@
+doctrine:
+  dbal:
+    # Test database (SQLite in-memory)
+    url: 'sqlite:///:memory:'

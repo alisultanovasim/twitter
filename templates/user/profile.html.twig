@@ -57,6 +57,16 @@
 
                     <p class="card-text">{{ displayTweet.content }}</p>
 
+                    {# IMAGE DISPLAY - ƏLAVƏ EDİLDİ #}
+                    {% if displayTweet.imagePath %}
+                        <div class="mt-2 mb-2">
+                            <img src="{{ asset('uploads/tweets/' ~ displayTweet.imagePath) }}"
+                                 alt="Tweet image"
+                                 class="img-fluid rounded"
+                                 style="max-height: 400px; width: 100%; object-fit: cover;">
+                        </div>
+                    {% endif %}
+
                     {# Interaction buttons #}
                     {% if app.user %}
                         {# Like button #}

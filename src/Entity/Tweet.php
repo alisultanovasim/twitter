@@ -20,7 +20,10 @@ class Tweet
     private ?int $id = null;
 
     #[ORM\Column(type: Types::TEXT)]
-    #[Assert\NotBlank(message: 'Tweet boş ola bilməz')]
+    #[Assert\Expression(
+        expression: 'this.isRetweet() or (this.getContent() != null and this.getContent() != "")',
+        message: 'Tweet boş ola bilməz'
+    )]
     #[Assert\Length(
         max: 280,
         maxMessage: 'Tweet maksimum {{ limit }} simvol ola bilər'
@@ -67,6 +70,8 @@ class Tweet
      */
     #[ORM\OneToMany(targetEntity: Tweet::class, mappedBy: 'originalTweet')]
     private Collection $retweets;
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $imagePath = null;
 
     public function __construct()
     {
@@ -246,5 +251,36 @@ class Tweet
             }
         }
         return false;
+    }
+
+    public function setImagePath(?string $imagePath): static
+    {
+        $this->imagePath = $imagePath;
+        return $this;
+    }
+
+
+    /**
+     * Helper - yalnız filename (LiiP Imagine üçün)
+     */
+    public function getImagePath(): ?string
+    {
+        return $this->imagePath; // abc123.jpg
+    }
+
+    /**
+     * Helper - full path (normal göstəriş üçün)
+     */
+    public function getImageUrl(): ?string
+    {
+        return $this->imagePath ? '/uploads/tweets/' . $this->imagePath : null;
+    }
+
+    /**
+     * Helper - LiiP Imagine üçün (slash-sız path)
+     */
+    public function getImagePathForImagine(): ?string
+    {
+        return $this->imagePath ? 'uploads/tweets/' . $this->imagePath : null;
     }
 }

@@ -6,7 +6,7 @@
     <div class="container" style="max-width: 600px; margin: 50px auto;">
         <h1>Create Tweet</h1>
 
-        {{ form_start(form) }}
+        {{ form_start(form,{'attr' : {'enctype': 'multipart/form-data'}}) }}
         {{ form_row(form.content) }}
 
         <button type="submit" class="btn btn-primary">Tweet</button>

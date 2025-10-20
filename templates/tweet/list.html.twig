@@ -33,6 +33,13 @@
                     {# YENI: Tweet content-i clickable #}
                     <a href="{{ path('tweet_show', {id: displayTweet.id}) }}" class="text-decoration-none text-dark">
                         <p class="card-text">{{ displayTweet.content }}</p>
+
+                        {% if displayTweet.imagePath %}
+                            <img src="{{ displayTweet.imagePathForImagine | imagine_filter('tweet_thumb') }}"
+                                 alt="Tweet image"
+                                 class="img-fluid rounded mt-2"
+                                 style="max-width: 100%; max-height: 400px; object-fit: cover;display: block;margin-bottom: 10px">
+                        {% endif %}
                     </a>
 
                     {% if app.user %}

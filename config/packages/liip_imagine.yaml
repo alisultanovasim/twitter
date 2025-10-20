@@ -1,0 +1,20 @@
+liip_imagine:
+    driver: "gd"
+    
+    # Deprecation warning fix
+    twig:
+        mode: lazy
+    
+    # Cache
+    cache: default
+    data_loader: default
+    default_image: null
+    
+    # Filter sets
+    filter_sets:
+        tweet_thumb:
+            quality: 80
+            filters:
+                thumbnail:
+                    size: [600, 600]
+                    mode: inset

@@ -11,17 +11,25 @@
             <div class="card-body">
                 <h6>@{{ parent_tweet.user.username }}</h6>
                 <p class="card-text">{{ parent_tweet.content }}</p>
+
+                {# Əgər parent tweet-də image varsa göstər #}
+                {% if parent_tweet.imagePath %}
+                    <div class="mt-2">
+                        <img src="{{ asset('uploads/tweets/' ~ parent_tweet.imagePath) }}"
+                             alt="Tweet image"
+                             class="img-fluid rounded"
+                             style="max-height: 300px; width: 100%; object-fit: cover;">
+                    </div>
+                {% endif %}
             </div>
         </div>
 
         {{ form_start(form) }}
-        {{ form_row(form.content, {
-            label: 'Cavabınız',
-            attr: {placeholder: 'Cavabınızı yazın...'}
-        }) }}
+        {{ form_widget(form) }}
 
         <button type="submit" class="btn btn-primary">Cavab göndər</button>
         <a href="{{ path('tweet_show', {id: parent_tweet.id}) }}" class="btn btn-secondary">Ləğv et</a>
+
         {{ form_end(form) }}
     </div>
 {% endblock %}

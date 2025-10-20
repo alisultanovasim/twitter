@@ -2,11 +2,9 @@
 
 namespace App\Controller;
 
-use App\Entity\User;
 use App\Repository\TweetRepository;
 use App\Repository\UserRepository;
-use App\Service\NotificationService;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,14 +13,23 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class UserController extends AbstractController
 {
+    public function __construct(
+        private UserService $userService
+    ) {}
+
     #[Route('/@{username}', name: 'user_profile')]
-    public function profile(string $username, TweetRepository $tweetRepository,UserRepository $userRepository): Response
+    public function profile(
+        string $username,
+        TweetRepository $tweetRepository,
+        UserRepository $userRepository
+    ): Response
     {
         $user = $userRepository->findOneBy(['username' => $username]);
 
         if (!$user) {
             throw $this->createNotFoundException('User tapılmadı');
         }
+
         $tweets = $tweetRepository->createQueryBuilder('t')
             ->where('t.user = :user')
             ->setParameter('user', $user)
@@ -42,12 +49,9 @@ class UserController extends AbstractController
     public function follow(
         string $username,
         UserRepository $userRepository,
-        EntityManagerInterface $em,
-        Request $request,
-        NotificationService $notificationService
+        Request $request
     ): Response
     {
-        // CSRF token yoxla
         $token = $request->headers->get('X-CSRF-Token');
         if (!$this->isCsrfTokenValid('user_follow', $token)) {
             return $this->json(['error' => 'Invalid CSRF token'], 403);
@@ -59,28 +63,11 @@ class UserController extends AbstractController
             throw $this->createNotFoundException('User tapılmadı');
         }
 
-        $currentUser = $this->getUser();
-
-        // Özünü follow edə bilməz
-        if ($userToFollow === $currentUser) {
-            return $this->json(['error' => 'Özünüzü follow edə bilməzsiniz'], 400);
+        try {
+            $result = $this->userService->toggleFollow($this->getUser(), $userToFollow);
+            return $this->json($result);
+        } catch (\InvalidArgumentException $e) {
+            return $this->json(['error' => $e->getMessage()], 400);
         }
-
-        if ($currentUser->isFollowing($userToFollow)) {
-            $currentUser->unfollow($userToFollow);
-            $following = false;
-        } else {
-            $currentUser->follow($userToFollow);
-            $notificationService->createFollowNotification($currentUser, $userToFollow);
-            $following = true;
-        }
-
-        $em->flush();
-
-        return $this->json([
-            'following' => $following,
-            'followers_count' => $userToFollow->getFollowersCount(),
-            'following_count' => $currentUser->getFollowingCount()
-        ]);
     }
 }

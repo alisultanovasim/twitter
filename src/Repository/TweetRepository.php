@@ -20,6 +20,7 @@ class TweetRepository extends ServiceEntityRepository
     public function getFollowingTimeline(User $user, int $limit = 50): array
     {
         return $this->createQueryBuilder('t')
+            ->select('t', 'u')
             ->leftJoin('t.user', 'u')
             ->where('t.user = :user')
             ->orWhere('u IN (:following)')
@@ -31,29 +32,4 @@ class TweetRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
-
-    //    /**
-    //     * @return Tweet[] Returns an array of Tweet objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('t')
-    //            ->andWhere('t.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('t.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-
-    //    public function findOneBySomeField($value): ?Tweet
-    //    {
-    //        return $this->createQueryBuilder('t')
-    //            ->andWhere('t.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
 }

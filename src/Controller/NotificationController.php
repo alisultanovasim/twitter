@@ -3,7 +3,7 @@
 namespace App\Controller;
 
 use App\Repository\NotificationRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Service\NotificationService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -11,6 +11,10 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class NotificationController extends AbstractController
 {
+    public function __construct(
+        private NotificationService $notificationService
+    ) {}
+
     #[Route('/notifications', name: 'notifications_list')]
     #[IsGranted('ROLE_USER')]
     public function list(NotificationRepository $notificationRepository): Response
@@ -30,37 +34,18 @@ class NotificationController extends AbstractController
 
     #[Route('/notifications/mark-read', name: 'notifications_mark_read', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function markAllAsRead(
-        NotificationRepository $notificationRepository,
-        EntityManagerInterface $em
-    ): Response
+    public function markAllAsRead(): Response
     {
-        $user = $this->getUser();
-
-        $notifications = $notificationRepository->findBy([
-            'recipient' => $user,
-            'isRead' => false
-        ]);
-
-        foreach ($notifications as $notification) {
-            $notification->setRead(true);
-        }
-
-        $em->flush();
+        $this->notificationService->markAllAsRead($this->getUser());
 
         return $this->redirectToRoute('notifications_list');
     }
 
     #[Route('/notifications/unread-count', name: 'notifications_unread_count', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
-    public function unreadCount(NotificationRepository $notificationRepository): Response
+    public function unreadCount(): Response
     {
-        $user = $this->getUser();
-
-        $count = $notificationRepository->count([
-            'recipient' => $user,
-            'isRead' => false
-        ]);
+        $count = $this->notificationService->getUnreadCount($this->getUser());
 
         return $this->json(['count' => $count]);
     }
