@@ -5,6 +5,7 @@ namespace App\Tests\Service;
 use App\Entity\Tweet;
 use App\Entity\User;
 use App\Event\TweetLikedEvent;
+use App\Event\TweetUnlikedEvent;
 use App\Service\TweetService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -30,12 +31,21 @@ class TweetServiceTest extends KernelTestCase
         $this->tweetService = $kernel->getContainer()
             ->get(TweetService::class);
 
-        // Create schema
-        $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS tweet');
-        $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS user');
-        $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS tweet_likes');
-        $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS notification');
+        // Disable foreign key checks
+        $this->em->getConnection()->executeStatement('SET FOREIGN_KEY_CHECKS=0');
 
+        // Drop tables in any order
+        $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS notification');
+        $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS tweet_likes');
+        $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS tweet');
+        $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS user_following');
+        $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS user_followers');
+        $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS user');
+
+        // Re-enable foreign key checks
+        $this->em->getConnection()->executeStatement('SET FOREIGN_KEY_CHECKS=1');
+
+        // Create schema
         $metadata = $this->em->getMetadataFactory()->getAllMetadata();
         $schemaTool = new \Doctrine\ORM\Tools\SchemaTool($this->em);
         $schemaTool->createSchema($metadata);

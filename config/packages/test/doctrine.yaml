@@ -1,4 +1,6 @@
-doctrine:
-  dbal:
-    # Test database (SQLite in-memory)
-    url: 'sqlite:///:memory:'
+# config/packages/doctrine.yaml - aşağıya əlavə et
+
+when@test:
+  doctrine:
+    dbal:
+      url: 'mysql://root:@127.0.0.1:3306/twitter_test?serverVersion=8.0&charset=utf8mb4'

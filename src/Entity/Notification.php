@@ -14,7 +14,7 @@ class Notification
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'notifications')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $recipient = null;
 
@@ -25,7 +25,7 @@ class Notification
     #[ORM\Column(length: 50)]
     private ?string $type = null;
 
-    #[ORM\ManyToOne(targetEntity: Tweet::class)]
+    #[ORM\ManyToOne(targetEntity: Tweet::class, inversedBy: 'notifications')]
     #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
     private ?Tweet $tweet = null;
 

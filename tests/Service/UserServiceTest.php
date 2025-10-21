@@ -30,13 +30,21 @@ class UserServiceTest extends KernelTestCase
         $this->userService = $kernel->getContainer()
             ->get(UserService::class);
 
-        // Create schema
+        // Disable foreign key checks
+        $this->em->getConnection()->executeStatement('SET FOREIGN_KEY_CHECKS=0');
+
+        // Drop tables in any order
+        $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS notification');
+        $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS tweet_likes');
+        $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS tweet');
         $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS user_following');
         $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS user_followers');
         $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS user');
-        $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS tweet');
-        $this->em->getConnection()->executeStatement('DROP TABLE IF EXISTS notification');
 
+        // Re-enable foreign key checks
+        $this->em->getConnection()->executeStatement('SET FOREIGN_KEY_CHECKS=1');
+
+        // Create schema
         $metadata = $this->em->getMetadataFactory()->getAllMetadata();
         $schemaTool = new \Doctrine\ORM\Tools\SchemaTool($this->em);
         $schemaTool->createSchema($metadata);
@@ -145,6 +153,10 @@ class UserServiceTest extends KernelTestCase
         $this->em->persist($tweet2);
 
         $this->em->flush();
+        $this->em->clear(); // ← Clear to force fresh fetch
+
+        // Refresh user from database
+        $user = $this->em->getRepository(\App\Entity\User::class)->find($user->getId());
 
         $tweets = $this->userService->getUserTweets($user);
 
