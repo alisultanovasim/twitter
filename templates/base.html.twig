@@ -25,6 +25,7 @@
         </form>
 
         <div class="navbar-nav ms-auto">
+            <a class="nav-link" href="{{ path('hashtag_trending') }}">🔥 Trending</a>
             {% if app.user %}
                 {# NotificationService bell - YENI #}
                 <a class="nav-link position-relative" href="{{ path('notifications_list') }}">

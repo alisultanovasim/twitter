@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Trending Hashtags{% endblock %}
+
+{% block body %}
+    <div class="container" style="max-width: 600px; margin: 50px auto;">
+        <h1>🔥 Trending Hashtags</h1>
+
+        <div class="list-group mt-4">
+            {% for hashtag in hashtags %}
+                <a href="{{ path('hashtag_show', {tag: hashtag.tag}) }}"
+                   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    <span>
+                        <strong>#{{ hashtag.tag }}</strong>
+                    </span>
+                    <span class="badge bg-primary rounded-pill">
+                        {{ hashtag.usageCount }} tweets
+                    </span>
+                </a>
+            {% else %}
+                <div class="alert alert-info">
+                    Hələ heç bir trending hashtag yoxdur.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

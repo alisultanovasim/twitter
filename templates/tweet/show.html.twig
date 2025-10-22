@@ -27,7 +27,7 @@
                     </h6>
                     <small class="text-muted">{{ displayTweet.createdAt|date('d M Y H:i') }}</small>
                 </div>
-                <p class="card-text mt-3" style="font-size: 1.2rem;">{{ displayTweet.content }}</p>
+                <p class="card-text mt-3" style="font-size: 1.2rem;">{{ displayTweet.content | linkify_mentions | raw }}</p>
 
                 {% if displayTweet.imagePath %}
                     <img src="{{ displayTweet.imageUrl }}"
@@ -91,7 +91,7 @@
                         </a>
                         <small class="text-muted">· {{ reply.createdAt|date('d M Y H:i') }}</small>
                     </h6>
-                    <p class="card-text">{{ reply.content }}</p>
+                    <p class="card-text">{{ reply.content | linkify_mentions | raw }}</p>
 
                     {# Reply-ə də like və retweet əlavə et #}
                     {% if app.user %}

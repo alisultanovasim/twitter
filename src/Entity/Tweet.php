@@ -73,12 +73,21 @@ class Tweet
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private ?string $imagePath = null;
 
+    /**
+     * @var Collection<int, Hashtag>
+     */
+    #[ORM\ManyToMany(targetEntity: Hashtag::class, inversedBy: 'tweets')]
+    #[ORM\JoinTable(name: 'tweet_hashtag')]
+    private Collection $hashtags;
+
     public function __construct()
     {
         $this->likedBy = new ArrayCollection();
         $this->replies = new ArrayCollection();
         $this->notifications = new ArrayCollection();
         $this->retweets = new ArrayCollection();
+        $this->hashtags = new ArrayCollection();
+
 
     }
 
@@ -282,5 +291,24 @@ class Tweet
     public function getImagePathForImagine(): ?string
     {
         return $this->imagePath ? 'uploads/tweets/' . $this->imagePath : null;
+    }
+
+    public function getHashtags(): Collection
+    {
+        return $this->hashtags;
+    }
+
+    public function addHashtag(Hashtag $hashtag): static
+    {
+        if (!$this->hashtags->contains($hashtag)) {
+            $this->hashtags->add($hashtag);
+        }
+        return $this;
+    }
+
+    public function removeHashtag(Hashtag $hashtag): static
+    {
+        $this->hashtags->removeElement($hashtag);
+        return $this;
     }
 }

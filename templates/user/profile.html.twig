@@ -55,7 +55,7 @@
                         {{ displayTweet.createdAt|date('d M Y H:i') }}
                     </h6>
 
-                    <p class="card-text">{{ displayTweet.content }}</p>
+                    <p class="card-text">{{ displayTweet.content | linkify_mentions | raw }}</p>
 
                     {# IMAGE DISPLAY - ƏLAVƏ EDİLDİ #}
                     {% if displayTweet.imagePath %}

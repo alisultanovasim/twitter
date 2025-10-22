@@ -42,13 +42,19 @@ class NotificationService
             return;
         }
 
-        // Check duplicate
-        $existing = $this->notificationRepository->findOneBy([
-            'recipient' => $tweet->getUser(),
-            'sender' => $liker,
-            'type' => 'like',
-            'tweet' => $tweet
-        ]);
+        // Check duplicate - DÜZƏLİŞ
+        $existing = $this->notificationRepository->createQueryBuilder('n')
+            ->where('n.recipient = :recipient')
+            ->andWhere('n.sender = :sender')
+            ->andWhere('n.type = :type')
+            ->andWhere('n.tweet = :tweet')
+            ->setParameter('recipient', $tweet->getUser())
+            ->setParameter('sender', $liker)
+            ->setParameter('type', 'like')
+            ->setParameter('tweet', $tweet)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
 
         if ($existing) {
             return;
@@ -69,12 +75,19 @@ class NotificationService
      */
     public function removeLikeNotification(User $unliker, Tweet $tweet): void
     {
-        $notification = $this->notificationRepository->findOneBy([
-            'recipient' => $tweet->getUser(),
-            'sender' => $unliker,
-            'type' => 'like',
-            'tweet' => $tweet
-        ]);
+        // DÜZƏLİŞ
+        $notification = $this->notificationRepository->createQueryBuilder('n')
+            ->where('n.recipient = :recipient')
+            ->andWhere('n.sender = :sender')
+            ->andWhere('n.type = :type')
+            ->andWhere('n.tweet = :tweet')
+            ->setParameter('recipient', $tweet->getUser())
+            ->setParameter('sender', $unliker)
+            ->setParameter('type', 'like')
+            ->setParameter('tweet', $tweet)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
 
         if ($notification) {
             $this->em->remove($notification);
@@ -83,20 +96,63 @@ class NotificationService
     }
 
     /**
+     * Create mention notification - YENI
+     */
+    public function createMentionNotification(User $mentioner, User $mentioned, Tweet $tweet): void
+    {
+        if ($mentioner === $mentioned) {
+            return;
+        }
+
+        try {
+            $existing = $this->notificationRepository->createQueryBuilder('n')
+                ->where('n.recipient = :recipient')
+                ->andWhere('n.sender = :sender')
+                ->andWhere('n.type = :type')
+                ->andWhere('n.tweet = :tweet')
+                ->setParameter('recipient', $mentioned)
+                ->setParameter('sender', $mentioner)
+                ->setParameter('type', 'mention')
+                ->setParameter('tweet', $tweet)
+                ->setMaxResults(1)
+                ->getQuery()
+                ->getOneOrNullResult();
+        }catch (\Exception $exception){
+            dd($exception);
+        }
+        // Check duplicate - DÜZƏLİŞ
+
+
+        if ($existing) {
+            return;
+        }
+
+        $notification = new Notification();
+        $notification->setRecipient($mentioned);
+        $notification->setSender($mentioner);
+        $notification->setType('mention');
+        $notification->setTweet($tweet);
+
+        $this->em->persist($notification);
+        $this->em->flush();
+    }
+
+    /**
      * Mark all notifications as read for user
      */
     public function markAllAsRead(User $user): void
     {
-        $notifications = $this->notificationRepository->findBy([
-            'recipient' => $user,
-            'isRead' => false
-        ]);
-
-        foreach ($notifications as $notification) {
-            $notification->setRead(true);
-        }
-
-        $this->em->flush();
+        // DÜZƏLİŞ - batch update istifadə et (daha performant)
+        $this->em->createQueryBuilder()
+            ->update(Notification::class, 'n')
+            ->set('n.isRead', ':isRead')
+            ->where('n.recipient = :user')
+            ->andWhere('n.isRead = :currentStatus')
+            ->setParameter('isRead', true)
+            ->setParameter('currentStatus', false)
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->execute();
     }
 
     /**

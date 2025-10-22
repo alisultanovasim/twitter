@@ -15,7 +15,9 @@ class TweetService
     public function __construct(
         private EntityManagerInterface $em,
         private TweetRepository $tweetRepository,
-        private EventDispatcherInterface $eventDispatcher
+        private EventDispatcherInterface $eventDispatcher,
+        private HashtagService $hashtagService,
+        private MentionService $mentionService
     ) {}
 
     /**
@@ -38,6 +40,10 @@ class TweetService
         $this->em->persist($tweet);
         $this->em->flush();
 
+        $this->hashtagService->processTweetHashtags($tweet);
+
+        $this->mentionService->processTweetMentions($tweet);
+
         return $tweet;
     }
 
@@ -49,6 +55,7 @@ class TweetService
         if ($tweet->getUser() !== $user) {
             throw new \RuntimeException('Bu tweet sizin deyil!');
         }
+        $this->hashtagService->removeTweetHashtags($tweet);
 
         $this->em->remove($tweet);
         $this->em->flush();

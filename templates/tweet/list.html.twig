@@ -32,7 +32,7 @@
 
                     {# YENI: Tweet content-i clickable #}
                     <a href="{{ path('tweet_show', {id: displayTweet.id}) }}" class="text-decoration-none text-dark">
-                        <p class="card-text">{{ displayTweet.content }}</p>
+                        <p class="card-text">{{ displayTweet.content | linkify_mentions | raw }}</p>
 
                         {% if displayTweet.imagePath %}
                             <img src="{{ displayTweet.imagePathForImagine | imagine_filter('tweet_thumb') }}"

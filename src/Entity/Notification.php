@@ -4,11 +4,17 @@ namespace App\Entity;
 
 use App\Repository\NotificationRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: NotificationRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class Notification
 {
+    // Type constants
+    public const TYPE_FOLLOW = 'follow';
+    public const TYPE_LIKE = 'like';
+    public const TYPE_MENTION = 'mention';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -22,7 +28,10 @@ class Notification
     #[ORM\JoinColumn(nullable: false)]
     private ?User $sender = null;
 
+    // ✅ BURADA PROBLEM VAR - ORM annotation əlavə et
     #[ORM\Column(length: 50)]
+    #[Assert\NotBlank]
+    #[Assert\Choice(choices: [self::TYPE_FOLLOW, self::TYPE_LIKE, self::TYPE_MENTION])]
     private ?string $type = null;
 
     #[ORM\ManyToOne(targetEntity: Tweet::class, inversedBy: 'notifications')]
@@ -76,6 +85,11 @@ class Notification
 
     public function setType(string $type): static
     {
+        // Validation
+        if (!in_array($type, [self::TYPE_FOLLOW, self::TYPE_LIKE, self::TYPE_MENTION], true)) {
+            throw new \InvalidArgumentException("Invalid notification type: {$type}");
+        }
+
         $this->type = $type;
         return $this;
     }

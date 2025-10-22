@@ -6,13 +6,16 @@ use App\Event\TweetLikedEvent;
 use App\Event\TweetUnlikedEvent;
 use App\Event\UserFollowedEvent;
 use App\Event\UserUnfollowedEvent;
+use App\Service\HashtagService;
 use App\Service\NotificationService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class NotificationSubscriber implements EventSubscriberInterface
 {
     public function __construct(
-        private NotificationService $notificationService
+        private NotificationService $notificationService,
+        private HashtagService $hashtagService
+
     ) {}
 
     public static function getSubscribedEvents(): array

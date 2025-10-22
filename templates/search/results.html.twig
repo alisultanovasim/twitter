@@ -49,8 +49,9 @@
 
                             {# YENI: Tweet content-i clickable #}
                             <a href="{{ path('tweet_show', {id: tweet.id}) }}" class="text-decoration-none text-dark">
-                                <p class="card-text">{{ tweet.content }}</p>
+                                <p class="card-text">{{ tweet.content | linkify_mentions | raw }}</p>
                             </a>
+
 
                             {# YENI: Interaction buttons əlavə et #}
                             {% if app.user %}
