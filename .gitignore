@@ -1,6 +1,7 @@
 
 ###> symfony/framework-bundle ###
 /.env.local
+/.env
 /.env.local.php
 /.env.*.local
 /config/secrets/prod/prod.decrypt.private.php
@@ -18,4 +19,6 @@
 /public/assets/
 /assets/vendor/
 /public/uploads/
+/public/media/cache/tweet_thumb/uploads/
+
 ###< symfony/asset-mapper ###
