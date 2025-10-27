@@ -42,7 +42,6 @@ class NotificationService
             return;
         }
 
-        // Check duplicate - DÜZƏLİŞ
         $existing = $this->notificationRepository->createQueryBuilder('n')
             ->where('n.recipient = :recipient')
             ->andWhere('n.sender = :sender')
@@ -75,7 +74,6 @@ class NotificationService
      */
     public function removeLikeNotification(User $unliker, Tweet $tweet): void
     {
-        // DÜZƏLİŞ
         $notification = $this->notificationRepository->createQueryBuilder('n')
             ->where('n.recipient = :recipient')
             ->andWhere('n.sender = :sender')
@@ -104,7 +102,6 @@ class NotificationService
             return;
         }
 
-        try {
             $existing = $this->notificationRepository->createQueryBuilder('n')
                 ->where('n.recipient = :recipient')
                 ->andWhere('n.sender = :sender')
@@ -117,10 +114,6 @@ class NotificationService
                 ->setMaxResults(1)
                 ->getQuery()
                 ->getOneOrNullResult();
-        }catch (\Exception $exception){
-            dd($exception);
-        }
-        // Check duplicate - DÜZƏLİŞ
 
 
         if ($existing) {
@@ -142,7 +135,6 @@ class NotificationService
      */
     public function markAllAsRead(User $user): void
     {
-        // DÜZƏLİŞ - batch update istifadə et (daha performant)
         $this->em->createQueryBuilder()
             ->update(Notification::class, 'n')
             ->set('n.isRead', ':isRead')

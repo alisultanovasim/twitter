@@ -4,36 +4,67 @@ namespace App\Controller;
 
 use App\Entity\Tweet;
 use App\Form\TweetType;
+use App\Repository\TweetRepository;
 use App\Service\FileUploaderService;
 use App\Service\TweetService;
+use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class TweetController extends AbstractController
 {
     public function __construct(
-        private TweetService $tweetService
+        private TweetService $tweetService,
+        private TweetRepository $tweetRepository,
     ) {}
 
     #[Route('/tweets', name: 'tweet_list', methods: ['GET'])]
-    public function list(): Response
+    public function list(Request $request, PaginatorInterface $paginator): Response
     {
         $user = $this->getUser();
 
-        $tweets = $user
-            ? $this->tweetService->getTimeline($user, 50)
-            : $this->tweetService->getPublicTimeline(50);
+        $query = $user
+            ? $this->tweetService->getTimeline($user)
+            : $this->tweetRepository->createQueryBuilder('t')
+                ->orderBy('t.createdAt', 'DESC')
+                ->getQuery();
 
-        return $this->render('tweet/list.html.twig', ['tweets' => $tweets]);
+        $pagination = $paginator->paginate(
+            $query,
+            $request->query->getInt('page', 1),
+            20
+        );
+
+        // AJAX request
+        if ($request->isXmlHttpRequest()) {
+            return $this->render('tweet/_tweet_list_items.html.twig', [
+                'pagination' => $pagination
+            ]);
+        }
+
+        return $this->render('tweet/list.html.twig', ['pagination' => $pagination]);
     }
 
     #[Route('/tweet/new', name: 'tweet_create', methods: ['GET', 'POST'])]
     #[IsGranted('ROLE_USER')]
-    public function create(Request $request, FileUploaderService $fileUploader): Response
+    public function create(
+        Request $request,
+        FileUploaderService $fileUploader,
+        #[Autowire(service: 'limiter.tweet_create')] RateLimiterFactory $tweetCreateLimiter
+    ): Response
     {
+        $limiter = $tweetCreateLimiter->create($request->getClientIp());
+
+        if (false === $limiter->consume(1)->isAccepted()) {
+            $this->addFlash('error', 'Çox tweet yaradırsınız. 1 saat gözləyin.');
+            return $this->redirectToRoute('tweet_list');
+        }
+
         $tweet = new Tweet();
         $form = $this->createForm(TweetType::class, $tweet);
         $form->handleRequest($request);
@@ -79,11 +110,21 @@ class TweetController extends AbstractController
 
     #[Route('/tweet/{id}/like', name: 'tweet_like', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function like(Tweet $tweet, Request $request): Response
+    public function like(
+        Tweet $tweet,
+        Request $request,
+        #[Autowire(service: 'limiter.tweet_like')] RateLimiterFactory $likeLimiter
+    ): Response
     {
         $token = $request->headers->get('X-CSRF-Token');
         if (!$this->isCsrfTokenValid('tweet_like', $token)) {
             return $this->json(['error' => 'Invalid CSRF token'], 403);
+        }
+
+        $limiter = $likeLimiter->create($request->getClientIp());
+
+        if (false === $limiter->consume(1)->isAccepted()) {
+            return $this->json(['error' => 'Çox like edirsiniz. Gözləyin.'], 429);
         }
 
         $liked = $this->tweetService->toggleLike($this->getUser(), $tweet);

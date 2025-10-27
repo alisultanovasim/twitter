@@ -130,9 +130,9 @@ class TweetService
     /**
      * Get timeline for user (following + own tweets)
      */
-    public function getTimeline(User $user, int $limit = 50): array
+    public function getTimeline(User $user, int $page = 1, int $limit = 20)
     {
-        return $this->tweetRepository->getFollowingTimeline($user, $limit);
+        return $this->tweetRepository->getFollowingTimelinePaginated($user, $page, $limit);
     }
 
     /**

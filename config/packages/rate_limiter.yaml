@@ -1,0 +1,50 @@
+framework:
+    rate_limiter:
+        # Tweet yaratma limiti (spam protection)
+        tweet_create:
+            policy: 'sliding_window'
+            limit: 10
+            interval: '1 hour'
+
+        # Login cəhdləri (brute-force protection)
+        login_attempts:
+            policy: 'fixed_window'
+            limit: 5
+            interval: '15 minutes'
+
+        # Like/unlike spam protection
+        tweet_like:
+            policy: 'sliding_window'
+            limit: 100
+            interval: '1 hour'
+
+        # Retweet spam protection
+        tweet_retweet:
+            policy: 'sliding_window'
+            limit: 50
+            interval: '1 hour'
+
+        # Follow/unfollow spam protection
+        user_follow:
+            policy: 'sliding_window'
+            limit: 50
+            interval: '1 hour'
+
+        # Search queries (API abuse protection)
+        search_api:
+            policy: 'fixed_window'
+            limit: 60
+            interval: '1 minute'
+
+        # Global API rate limit (per IP)
+        api_global:
+            policy: 'token_bucket'
+            limit: 1000
+            rate:
+                interval: '1 hour'
+
+        # Registration spam protection
+        user_registration:
+            policy: 'fixed_window'
+            limit: 3
+            interval: '1 hour'

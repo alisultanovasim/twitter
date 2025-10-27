@@ -8,19 +8,38 @@ use App\Security\LoginFormAuthenticator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 
 class RegistrationController extends AbstractController
 {
     #[Route('/register', name: 'app_register')]
-    public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, Security $security, EntityManagerInterface $entityManager): Response
+    public function register(
+        Request $request,
+        UserPasswordHasherInterface $userPasswordHasher,
+        Security $security,
+        EntityManagerInterface $entityManager,
+        #[Autowire(service: 'limiter.user_registration')] RateLimiterFactory $registrationLimiter
+    ): Response
     {
         if ($this->getUser()) {
             return $this->redirectToRoute('app_home');
         }
+
+
+        if ($request->isMethod('POST')) {
+            $limiter = $registrationLimiter->create($request->getClientIp());
+
+            if (false === $limiter->consume(1)->isAccepted()) {
+                $this->addFlash('error', 'Çox qeydiyyat cəhdi. 1 saat gözləyin.');
+                return $this->redirectToRoute('app_register');
+            }
+        }
+
         $user = new User();
         $form = $this->createForm(RegistrationFormType::class, $user);
         $form->handleRequest($request);

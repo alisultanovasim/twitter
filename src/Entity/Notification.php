@@ -28,7 +28,6 @@ class Notification
     #[ORM\JoinColumn(nullable: false)]
     private ?User $sender = null;
 
-    // ✅ BURADA PROBLEM VAR - ORM annotation əlavə et
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank]
     #[Assert\Choice(choices: [self::TYPE_FOLLOW, self::TYPE_LIKE, self::TYPE_MENTION])]

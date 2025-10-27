@@ -10,89 +10,170 @@
             <a href="{{ path('tweet_create') }}" class="btn btn-primary mb-3">New Tweet</a>
         {% endif %}
 
-        {% for tweet in tweets %}
-            <div class="card mb-3">
-                <div class="card-body">
-                    {# Əgər retweet-dirsə göstər #}
-                    {% if tweet.isRetweet %}
-                        <small class="text-muted">
-                            🔁 @{{ tweet.user.username }} retweeted
-                        </small>
-                        {% set displayTweet = tweet.originalTweet %}
-                    {% else %}
-                        {% set displayTweet = tweet %}
-                    {% endif %}
-
-                    <h6 class="card-subtitle mb-2 text-muted">
-                        <a href="{{ path('user_profile', {username: displayTweet.user.username}) }}">
-                            @{{ displayTweet.user.username }}
-                        </a> ·
-                        {{ displayTweet.createdAt|date('d M Y H:i') }}
-                    </h6>
-
-                    {# YENI: Tweet content-i clickable #}
-                    <a href="{{ path('tweet_show', {id: displayTweet.id}) }}" class="text-decoration-none text-dark">
-                        <p class="card-text">{{ displayTweet.content | linkify_mentions | raw }}</p>
-
-                        {% if displayTweet.imagePath %}
-                            <img src="{{ displayTweet.imagePathForImagine | imagine_filter('tweet_thumb') }}"
-                                 alt="Tweet image"
-                                 class="img-fluid rounded mt-2"
-                                 style="max-width: 100%; max-height: 400px; object-fit: cover;display: block;margin-bottom: 10px">
+        {# Tweet container - infinite scroll target #}
+        <div id="tweet-container">
+            {% for tweet in pagination %}
+                <div class="card mb-3 tweet-item">
+                    <div class="card-body">
+                        {# Əgər retweet-dirsə göstər #}
+                        {% if tweet.isRetweet %}
+                            <small class="text-muted">
+                                🔁 @{{ tweet.user.username }} retweeted
+                            </small>
+                            {% set displayTweet = tweet.originalTweet %}
+                        {% else %}
+                            {% set displayTweet = tweet %}
                         {% endif %}
-                    </a>
 
-                    {% if app.user %}
-                        {# Like button #}
-                        <button onclick="likeToggle({{ displayTweet.id }})" class="btn btn-sm">
-                            <span id="like-{{ displayTweet.id }}">
-                                {{ displayTweet.isLikedBy(app.user) ? '❤️' : '🤍' }}
-                            </span>
-                            <span id="count-{{ displayTweet.id }}">{{ displayTweet.likesCount }}</span>
-                        </button>
+                        <h6 class="card-subtitle mb-2 text-muted">
+                            <a href="{{ path('user_profile', {username: displayTweet.user.username}) }}">
+                                @{{ displayTweet.user.username }}
+                            </a> ·
+                            {{ displayTweet.createdAt|date('d M Y H:i') }}
+                        </h6>
 
-                        {# Retweet button #}
-                        <button onclick="retweetToggle({{ displayTweet.id }})" class="btn btn-sm">
-                            <span id="retweet-{{ displayTweet.id }}">
-                                {{ displayTweet.isRetweetedBy(app.user) ? '🔁' : '🔄' }}
-                            </span>
-                            <span id="retweet-count-{{ displayTweet.id }}">{{ displayTweet.retweetsCount }}</span>
-                        </button>
+                        <a href="{{ path('tweet_show', {id: displayTweet.id}) }}" class="text-decoration-none text-dark">
+                            <p class="card-text">{{ displayTweet.content | linkify_mentions | raw }}</p>
 
-                        {# Reply link #}
-                        <a href="{{ path('tweet_show', {id: displayTweet.id}) }}" class="text-decoration-none">
-                            💬 {{ displayTweet.repliesCount }}
+                            {% if displayTweet.imagePath %}
+                                <img src="{{ displayTweet.imagePathForImagine | imagine_filter('tweet_thumb') }}"
+                                     alt="Tweet image"
+                                     class="img-fluid rounded mt-2"
+                                     style="max-width: 100%; max-height: 400px; object-fit: cover;display: block;margin-bottom: 10px">
+                            {% endif %}
                         </a>
-                    {% else %}
-                        <span class="text-muted">🤍 {{ displayTweet.likesCount }}</span>
-                        <span class="text-muted">🔄 {{ displayTweet.retweetsCount }}</span>
-                    {% endif %}
 
-                    {# Delete button (yalnız öz tweet-i) #}
-                    {% if app.user and tweet.user.id == app.user.id %}
-                        <form method="post" action="{{ path('tweet_delete', {id: tweet.id}) }}"
-                              onsubmit="return confirm('Tweet silinsin?');" style="display: inline;">
-                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ tweet.id) }}">
-                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                        </form>
+                        {% if app.user %}
+                            {# Like button #}
+                            <button onclick="likeToggle({{ displayTweet.id }})" class="btn btn-sm">
+                                <span id="like-{{ displayTweet.id }}">
+                                    {{ displayTweet.isLikedBy(app.user) ? '❤️' : '🤍' }}
+                                </span>
+                                <span id="count-{{ displayTweet.id }}">{{ displayTweet.likesCount }}</span>
+                            </button>
+
+                            {# Retweet button #}
+                            <button onclick="retweetToggle({{ displayTweet.id }})" class="btn btn-sm">
+                                <span id="retweet-{{ displayTweet.id }}">
+                                    {{ displayTweet.isRetweetedBy(app.user) ? '🔁' : '🔄' }}
+                                </span>
+                                <span id="retweet-count-{{ displayTweet.id }}">{{ displayTweet.retweetsCount }}</span>
+                            </button>
+
+                            {# Reply link #}
+                            <a href="{{ path('tweet_show', {id: displayTweet.id}) }}" class="text-decoration-none">
+                                💬 {{ displayTweet.repliesCount }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted">🤍 {{ displayTweet.likesCount }}</span>
+                            <span class="text-muted">🔄 {{ displayTweet.retweetsCount }}</span>
+                        {% endif %}
+
+                        {# Delete button (yalnız öz tweet-i) #}
+                        {% if app.user and tweet.user.id == app.user.id %}
+                            <form method="post" action="{{ path('tweet_delete', {id: tweet.id}) }}"
+                                  onsubmit="return confirm('Tweet silinsin?');" style="display: inline;">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ tweet.id) }}">
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <p class="mb-0">Hələ heç bir tweet yoxdur.</p>
+                    {% if app.user %}
+                        <a href="{{ path('tweet_create') }}" class="btn btn-primary mt-2">İlk Tweet-i yarat</a>
+                    {% else %}
+                        <a href="{{ path('app_login') }}" class="btn btn-primary mt-2">Login olun</a>
                     {% endif %}
                 </div>
+            {% endfor %}
+        </div>
+
+        {# Loading indicator #}
+        <div id="loading" class="text-center mt-3" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
             </div>
-        {% else %}
-            <div class="alert alert-info">
-                <p class="mb-0">Hələ heç bir tweet yoxdur.</p>
-                {% if app.user %}
-                    <a href="{{ path('tweet_create') }}" class="btn btn-primary mt-2">İlk Tweet-i yarat</a>
-                {% else %}
-                    <a href="{{ path('app_login') }}" class="btn btn-primary mt-2">Login olun</a>
-                {% endif %}
+        </div>
+
+        {# End of results indicator #}
+        {% if pagination.count == 0 or pagination|length < 20 %}
+            <div id="end-of-results" class="text-center text-muted mt-3">
+                <small>Bütün tweet-lər yükləndi</small>
             </div>
-        {% endfor %}
+        {% endif %}
+
+        {# Hidden pagination info for JS #}
+        <div id="pagination-data"
+             data-current-page="{{ pagination.currentPageNumber }}"
+             data-total-pages="{{ pagination.pageCount }}"
+             style="display: none;">
+        </div>
     </div>
 {% endblock %}
 
 {% block javascripts %}
+    {{ parent() }}
     <script>
+        let currentPage = {{ pagination.currentPageNumber }};
+        const totalPages = {{ pagination.pageCount }};
+        let isLoading = false;
+
+        // Infinite scroll
+        window.addEventListener('scroll', function() {
+            if (isLoading) return;
+            if (currentPage >= totalPages) return;
+
+            const scrollPosition = window.innerHeight + window.scrollY;
+            const threshold = document.body.offsetHeight - 500;
+
+            if (scrollPosition >= threshold) {
+                loadMoreTweets();
+            }
+        });
+
+        function loadMoreTweets() {
+            isLoading = true;
+            document.getElementById('loading').style.display = 'block';
+
+            const nextPage = currentPage + 1;
+
+            fetch(`{{ path('tweet_list') }}?page=${nextPage}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newTweets = doc.querySelectorAll('.tweet-item');
+
+                    if (newTweets.length > 0) {
+                        const container = document.getElementById('tweet-container');
+                        newTweets.forEach(tweet => {
+                            container.appendChild(tweet.cloneNode(true));
+                        });
+                        currentPage++;
+                    }
+
+                    document.getElementById('loading').style.display = 'none';
+                    isLoading = false;
+
+                    if (currentPage >= totalPages) {
+                        document.getElementById('end-of-results').style.display = 'block';
+                    }
+                })
+                .catch(err => {
+                    console.error('Error loading tweets:', err);
+                    document.getElementById('loading').style.display = 'none';
+                    isLoading = false;
+                });
+        }
+
+        // Like/retweet functions (mövcud)
         function likeToggle(tweetId) {
             fetch(`/tweet/${tweetId}/like`, {
                 method: 'POST',

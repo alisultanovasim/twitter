@@ -6,6 +6,7 @@ use App\Entity\Tweet;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Knp\Component\Pager\PaginatorInterface;
 
 /**
  * @extends ServiceEntityRepository<Tweet>
@@ -16,10 +17,9 @@ class TweetRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Tweet::class);
     }
-
-    public function getFollowingTimeline(User $user, int $limit = 50): array
+    public function getFollowingTimelinePaginated(User $user, int $page = 1, int $limit = 20)
     {
-        return $this->createQueryBuilder('t')
+        $qb = $this->createQueryBuilder('t')
             ->select('t', 'u')
             ->leftJoin('t.user', 'u')
             ->where('t.user = :user')
@@ -27,9 +27,8 @@ class TweetRepository extends ServiceEntityRepository
             ->andWhere('t.parent IS NULL')
             ->setParameter('user', $user)
             ->setParameter('following', $user->getFollowing()->toArray())
-            ->orderBy('t.createdAt', 'DESC')
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
+            ->orderBy('t.createdAt', 'DESC');
+
+        return $qb->getQuery();
     }
 }
