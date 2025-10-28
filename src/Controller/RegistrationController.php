@@ -23,13 +23,12 @@ class RegistrationController extends AbstractController
         UserPasswordHasherInterface $userPasswordHasher,
         Security $security,
         EntityManagerInterface $entityManager,
-        #[Autowire(service: 'limiter.user_registration')] RateLimiterFactory $registrationLimiter
+        #[Autowire(service: 'user_registration.limiter')] RateLimiterFactory $registrationLimiter
     ): Response
     {
         if ($this->getUser()) {
             return $this->redirectToRoute('app_home');
         }
-
 
         if ($request->isMethod('POST')) {
             $limiter = $registrationLimiter->create($request->getClientIp());
@@ -45,16 +44,11 @@ class RegistrationController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            /** @var string $plainPassword */
             $plainPassword = $form->get('plainPassword')->getData();
-
-            // encode the plain password
             $user->setPassword($userPasswordHasher->hashPassword($user, $plainPassword));
 
             $entityManager->persist($user);
             $entityManager->flush();
-
-            // do anything else you need here, like send an email
 
             return $security->login($user, LoginFormAuthenticator::class, 'main');
         }

@@ -16,7 +16,6 @@ class SecurityController extends AbstractController
             return $this->redirectToRoute('app_home');
         }
 
-        // Get the login error if there is one
         $error = $authenticationUtils->getLastAuthenticationError();
         $lastUserEmail = $authenticationUtils->getLastUsername();
 

@@ -55,7 +55,7 @@ class TweetController extends AbstractController
     public function create(
         Request $request,
         FileUploaderService $fileUploader,
-        #[Autowire(service: 'limiter.tweet_create')] RateLimiterFactory $tweetCreateLimiter
+        #[Autowire(service: 'tweet_create.limiter')] RateLimiterFactory $tweetCreateLimiter
     ): Response
     {
         $limiter = $tweetCreateLimiter->create($request->getClientIp());
@@ -113,7 +113,7 @@ class TweetController extends AbstractController
     public function like(
         Tweet $tweet,
         Request $request,
-        #[Autowire(service: 'limiter.tweet_like')] RateLimiterFactory $likeLimiter
+        #[Autowire(service: 'tweet_like.limiter')] RateLimiterFactory $likeLimiter
     ): Response
     {
         $token = $request->headers->get('X-CSRF-Token');
@@ -173,11 +173,21 @@ class TweetController extends AbstractController
 
     #[Route('/tweet/{id}/retweet', name: 'tweet_retweet', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function retweet(Tweet $originalTweet, Request $request): Response
+    public function retweet(
+        Tweet $originalTweet,
+        Request $request,
+        #[Autowire(service: 'tweet_retweet.limiter')] RateLimiterFactory $retweetLimiter
+    ): Response
     {
         $token = $request->headers->get('X-CSRF-Token');
         if (!$this->isCsrfTokenValid('tweet_retweet', $token)) {
             return $this->json(['error' => 'Invalid CSRF token'], 403);
+        }
+
+        $limiter = $retweetLimiter->create($request->getClientIp());
+
+        if (false === $limiter->consume(1)->isAccepted()) {
+            return $this->json(['error' => 'Çox retweet edirsiniz. Gözləyin.'], 429);
         }
 
         try {

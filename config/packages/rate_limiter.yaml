@@ -5,36 +5,48 @@ framework:
             policy: 'sliding_window'
             limit: 10
             interval: '1 hour'
+            lock_factory: 'lock.factory'
+            storage_service: 'cache.rate_limiter'
 
         # Login cəhdləri (brute-force protection)
         login_attempts:
             policy: 'fixed_window'
             limit: 5
             interval: '15 minutes'
+            lock_factory: 'lock.factory'
+            storage_service: 'cache.rate_limiter'
 
         # Like/unlike spam protection
         tweet_like:
             policy: 'sliding_window'
             limit: 100
             interval: '1 hour'
+            lock_factory: 'lock.factory'
+            storage_service: 'cache.rate_limiter'
 
         # Retweet spam protection
         tweet_retweet:
             policy: 'sliding_window'
             limit: 50
             interval: '1 hour'
+            lock_factory: 'lock.factory'
+            storage_service: 'cache.rate_limiter'
 
         # Follow/unfollow spam protection
         user_follow:
             policy: 'sliding_window'
             limit: 50
             interval: '1 hour'
+            lock_factory: 'lock.factory'
+            storage_service: 'cache.rate_limiter'
 
         # Search queries (API abuse protection)
         search_api:
             policy: 'fixed_window'
             limit: 60
             interval: '1 minute'
+            lock_factory: 'lock.factory'
+            storage_service: 'cache.rate_limiter'
 
         # Global API rate limit (per IP)
         api_global:
@@ -42,9 +54,13 @@ framework:
             limit: 1000
             rate:
                 interval: '1 hour'
+            lock_factory: 'lock.factory'
+            storage_service: 'cache.rate_limiter'
 
         # Registration spam protection
         user_registration:
             policy: 'fixed_window'
             limit: 3
             interval: '1 hour'
+            lock_factory: 'lock.factory'
+            storage_service: 'cache.rate_limiter'
