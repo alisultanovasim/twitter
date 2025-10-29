@@ -55,13 +55,13 @@ class TweetController extends AbstractController
     public function create(
         Request $request,
         FileUploaderService $fileUploader,
-        #[Autowire(service: 'tweet_create.limiter')] RateLimiterFactory $tweetCreateLimiter
+        #[Autowire(service: 'limiter.tweet_create')] RateLimiterFactory $tweetCreateLimiter
     ): Response
     {
         $limiter = $tweetCreateLimiter->create($request->getClientIp());
 
         if (false === $limiter->consume(1)->isAccepted()) {
-            $this->addFlash('error', 'Çox tweet yaradırsınız. 1 saat gözləyin.');
+            $this->addFlash('error', 'Çox tweet yaradırsınız. 10 dəqiqə gözləyin.');
             return $this->redirectToRoute('tweet_list');
         }
 
@@ -113,7 +113,7 @@ class TweetController extends AbstractController
     public function like(
         Tweet $tweet,
         Request $request,
-        #[Autowire(service: 'tweet_like.limiter')] RateLimiterFactory $likeLimiter
+        #[Autowire(service: 'limiter.tweet_like')] RateLimiterFactory $likeLimiter
     ): Response
     {
         $token = $request->headers->get('X-CSRF-Token');
@@ -176,7 +176,7 @@ class TweetController extends AbstractController
     public function retweet(
         Tweet $originalTweet,
         Request $request,
-        #[Autowire(service: 'tweet_retweet.limiter')] RateLimiterFactory $retweetLimiter
+        #[Autowire(service: 'limiter.tweet_retweet')] RateLimiterFactory $retweetLimiter
     ): Response
     {
         $token = $request->headers->get('X-CSRF-Token');

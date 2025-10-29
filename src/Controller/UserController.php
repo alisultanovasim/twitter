@@ -52,7 +52,7 @@ class UserController extends AbstractController
         string $username,
         UserRepository $userRepository,
         Request $request,
-        #[Autowire(service: 'user_follow.limiter')] RateLimiterFactory $followLimiter
+        #[Autowire(service: 'limiter.user_follow')] RateLimiterFactory $followLimiter
     ): Response
     {
         $token = $request->headers->get('X-CSRF-Token');

@@ -1,3 +1,7 @@
+parameters:
+    # ✅ Upload directory parametri
+    tweets_upload_directory: '%kernel.project_dir%/public/uploads/tweets'
+
 services:
     _defaults:
         autowire: true
@@ -10,37 +14,12 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
-    # ✅ Rate limiter storage
-    cache.rate_limiter:
-        class: Symfony\Component\Cache\Adapter\FilesystemAdapter
-        arguments:
-            - 'rate_limiter'
-            - 0
-            - '%kernel.cache_dir%/pools'
-
-    # ✅ Manual limiter factory definition (TEMPORARY FIX)
-    limiter.login_attempts:
-        class: Symfony\Component\RateLimiter\RateLimiterFactory
-        arguments:
-            -
-                id: 'login_attempts'
-                policy: 'fixed_window'
-                limit: 5
-                interval: '15 minutes'
-            - '@cache.rate_limiter'
-            - '@lock.factory'
-
-    # LoginFormAuthenticator
-    App\Security\LoginFormAuthenticator:
-        arguments:
-            $loginLimiter: '@limiter.login_attempts'
-
-    # FileUploader
+    # ✅ FileUploader - artıq parametr var
     App\Service\FileUploaderService:
         arguments:
             $targetDirectory: '%tweets_upload_directory%'
 
-    # Public services for testing
+    # ✅ Test üçün public services
     App\Service\TweetService:
         public: true
 

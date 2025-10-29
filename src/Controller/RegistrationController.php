@@ -23,7 +23,7 @@ class RegistrationController extends AbstractController
         UserPasswordHasherInterface $userPasswordHasher,
         Security $security,
         EntityManagerInterface $entityManager,
-        #[Autowire(service: 'user_registration.limiter')] RateLimiterFactory $registrationLimiter
+        #[Autowire(service: 'limiter.user_registration')] RateLimiterFactory $registrationLimiter
     ): Response
     {
         if ($this->getUser()) {

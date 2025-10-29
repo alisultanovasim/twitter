@@ -18,6 +18,7 @@ use Symfony\Component\Security\Http\Authenticator\Passport\Credentials\PasswordC
 use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Symfony\Component\Security\Http\SecurityRequestAttributes;
 use Symfony\Component\Security\Http\Util\TargetPathTrait;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
 {
@@ -27,19 +28,20 @@ class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
 
     public function __construct(
         private UrlGeneratorInterface $urlGenerator,
-        private RateLimiterFactory $loginLimiter // ƏLAVƏ
+        #[Autowire(service: 'limiter.login_attempts')]
+        private RateLimiterFactory $loginLimiter
     ) {
     }
 
     public function authenticate(Request $request): Passport
     {
         $email = $request->getPayload()->getString('_email');
-
         $request->getSession()->set(SecurityRequestAttributes::LAST_USERNAME, $email);
 
+        // ✅ Rate limit yoxlaması
         $limiter = $this->loginLimiter->create($request->getClientIp());
 
-        if (false === $limiter->consume(1)->isAccepted()) {
+        if (!$limiter->consume(1)->isAccepted()) {
             throw new TooManyLoginAttemptsAuthenticationException();
         }
 
@@ -65,7 +67,10 @@ class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception): Response
     {
         if ($exception instanceof TooManyLoginAttemptsAuthenticationException) {
-            $request->getSession()->set(SecurityRequestAttributes::AUTHENTICATION_ERROR, $exception);
+            $request->getSession()->getFlashBag()->add(
+                'error',
+                'Çox cəhd etdiniz! 15 dəqiqə gözləyin.'
+            );
         }
 
         return parent::onAuthenticationFailure($request, $exception);
